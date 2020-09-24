@@ -163,7 +163,6 @@ namespace ExpressionSolverService {
 			[TestCase("H = M => K = D + (D * E / 10")]
 			[TestCase("H = M => K = * D + D * E / 10")]
 			[TestCase("H = M => K = D + D * E / 10 + ")]
-			[TestCase("H = M => K = D + D * E / 10 + ")]
 			[TestCase("H = M => K = ")]
 			[TestCase("H = M =>")]
 			[TestCase("H = M => K = D bad")]
