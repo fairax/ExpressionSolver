@@ -1,0 +1,198 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Expression Solver</title>
+    <style type="text/css">
+        .error-text {
+            color: red;
+            font-style: italic;
+        }
+
+        .input-label {
+            display: inline-block;
+            min-width: 12px;
+            margin-right: 6px;
+        }
+
+        .list-item {
+            margin-top: 6px;
+            height: 24px;
+        }
+
+        input[type=checkbox] {
+            margin: 0px;
+            vertical-align: middle;
+        }
+    </style>
+    <script type="text/javascript">
+        window.addEventListener("load", function () {
+            const parametersForm    = document.getElementById("expressionParametersForm");
+            const expressionForm    = document.getElementById("expressionForm");
+            const expressionHistory = document.getElementById("expressionHistory");
+            const expressionError   = document.getElementById("expressionError");
+            
+            
+            function sendParameters() {
+                const XHR    = new XMLHttpRequest();
+                const data   = new FormData(parametersForm);
+                const params = new URLSearchParams(data);
+
+                XHR.addEventListener("load", handleResult);
+
+                // Define what happens in case of error
+                XHR.addEventListener("error", function (event) {
+                    submitParameters.disabled = false;
+                    alert('Oops! Something went wrong.');
+                })
+                XHR.open("GET", "api/expression_solver?" + params.toString());
+                XHR.send();
+                submitParameters.disabled = true;
+                parametersError.style.display = "none";
+
+                function handleResult(event) {
+                    submitParameters.disabled = false;
+                    var data = JSON.parse(event.target.responseText);
+                    if (event.target.status != 200) {
+                        if (data.errors) {
+                            if (data.errors.d) {
+                                parametersError.style.display = "block";
+                                parametersError.innerHTML = "Wrong parameter D format.";
+                                return;
+                            } else if (data.errors.e) {
+                                parametersError.style.display = "block";
+                                parametersError.innerHTML = "Wrong parameter E format.";
+                                return;
+                            } else if (data.errors.f) {
+                                parametersError.style.display = "block";
+                                parametersError.innerHTML = "Wrong parameter F format.";
+                                return;
+                            }
+                        } else
+                            alert(JSON.stringify(data));
+                    } else if (data.isError) {
+                        parametersError.style.display = "block";
+                        parametersError.innerHTML = data.errorMessage;
+                    } else {
+                        alert("H = " + data.type + ", K = " + data.result);
+                    }
+                }
+            };
+
+            function sendExpression() {
+                const XHR      = new XMLHttpRequest();
+                const formData = new FormData(expressionForm);
+
+                expressionError.style.display = "none";
+
+                XHR.addEventListener("load", handleResult);
+
+                // Define what happens in case of error
+                XHR.addEventListener("error", function (event) {
+                    submitExpression.disabled = false;
+                    alert('Oops! Something went wrong.');
+                })
+                XHR.open("POST", "api/expression_solver");
+                XHR.send(formData);
+                submitExpression.disabled = true;
+
+                function handleResult(event) {
+                    submitExpression.disabled = false;
+                    var data = JSON.parse(event.target.responseText);
+                    if (event.target.status != 200) {
+                        alert(JSON.stringify(data));
+                    } else if (data.isError) {
+                        expressionError.style.display = "block";
+                        if (data.length == 0)
+                            expressionError.innerHTML = formData.get("expression") + " <span class=\"error-text\">unexpected end of expression</span>";
+                        else {
+                            var expression = formData.get("expression");
+                            expressionError.innerHTML =
+                                  expression.substr(0, data.startOffset)
+                                + "<span style=\"color:red\">"
+                                + expression.substr(data.startOffset, data.length)
+                                + "</span>"
+                                + expression.substr(data.startOffset + data.length)
+                                + " <span class=\"error-text\">unexpected character</span>";
+                        }
+                    } else {
+                        var row = expressionHistory.insertRow(0);
+                        var cell = row.insertCell(0);
+                        cell.innerHTML = formData.get("expression");
+                        alert("Expression set");
+                    }
+                }
+            };
+
+            parametersForm.addEventListener("submit", function (event) {
+                event.preventDefault();
+                sendParameters();
+            });
+
+            expressionForm.addEventListener("submit", function (event) {
+                event.preventDefault();
+                sendExpression();
+            });
+        });
+    </script>
+</head>
+<body>
+    <div style="padding: 12px">
+        <form id="expressionParametersForm" action="api/expression_solver" method="get">
+            <div>
+                Expression Parameters:
+            </div>
+            <div class="list-item">
+                <label class="input-label">A</label>
+                <input name="a" type="checkbox" value="true" />
+            </div>
+            <div class="list-item">
+                <label class="input-label" ">B</label>
+                <input name="b" type="checkbox" value="true" />
+            </div>
+            <div class="list-item">
+                <label class="input-label">C</label>
+                <input name="c" type="checkbox" value="true" />
+            </div>
+            <div class="list-item">
+                <label class="input-label">D</label>
+                <input name="d" type="text" />
+            </div>
+            <div class="list-item">
+                <label class="input-label">E</label>
+                <input name="e" type="text" />
+            </div>
+            <div class="list-item">
+                <label class="input-label">F</label>
+                <input name="f" type="text" />
+            </div>
+            <div class="list-item">
+                <label id="parametersError" class="error-text" style="display: none" />
+            </div>
+            <button class="list-item" id="submitParameters" type="submit">Solve</button>
+        </form>
+    </div>
+    <div style="padding: 12px">
+        <form id="expressionForm" action="api/expression_solver" method="post">
+            <div>
+                New Expression:
+            </div>
+            <div class="list-item">
+                <label class="input-label">Expression</label>
+                <input name="expression" style="margin: 0" type="text" />
+            </div>
+            <div class="list-item">
+                <label id="expressionError" style="display: none" />
+            </div>
+            <button class="list-item" id="submitExpression" type="submit">Set expression</button>
+        </form>
+    </div>
+    <div style="padding: 12px">
+        <div>
+            Previous expressions:
+        </div>
+        <table id="expressionHistory" style="margin-top: 6px">
+        </table>
+    </div>
+</body>
+</html>
