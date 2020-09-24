@@ -14,7 +14,7 @@ Web API is implemented using ASP.NET Core MVC. This framework is very similar to
 
 To parse expressions I'm using ANTLR4. This tool allows to generate parser based on grammar. When parser is given expression it produces an AST and with AST there is a lot of flexibility. It can be used to get detailed syntax error messages, to generate objects to do computations or to generate code that can be compiled.
 
-Code quality verification is done through unit testing with NUnit.
+Code quality verification is done through unit testing with NUnit. Web UI could be tested with various UI testing frameworks but I decided to test it manually.
 
 ## Structure ##
 
@@ -26,7 +26,7 @@ Business logic in  ExpressionSolver/ExpressionSolverService/ExpressionsRepositor
 
 I didn't implemented persistance for expressions so there is no separate layer for their storage and ExpressionsRepository.cs is responsible for storing expressions.
 
-Also in .NET unit tests are usually implemented as separate project but in my implementation they are used to test ExpressionsRepository methods only and I decided to place them in ExpressionsRepository class directly for simplicity.
+Also in .NET unit tests are usually implemented as separate project but in my implementation they are used to test ExpressionsRepository methods only and I decided to place them in ExpressionsRepository class directly for simplicity. ExpressionSolverController.cs methods are just a thin wrapper over ExpressionsRepository methods and tested manually together with UI.
 
 ## How to run ##
 
